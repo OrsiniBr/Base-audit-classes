@@ -10,3 +10,5 @@ Base has helped me focus in my auditing classes
 SLITHER, ADERYN, 4NALYZ3R, MYTHRIL -these are static tools
 
 26/12/25 - how to access an audit request. Applying REKT test and giving consultancy as alt
+
+28/12/25 - learnt cloc, lernt how to use solidity metrics to get clearer data, found first vulnerability in the password store
