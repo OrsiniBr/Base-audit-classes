@@ -26,7 +26,7 @@ learnt how to write finings properly
 ## 30/12/25 -
 learnt severity by the means of likelyhood and impact and also learnt good markdown systax for reporting
 
-## 2/01/25 -
+## 2/01/26 -
 learnt timeboxing , installed pandoc and latex
 learnt how to write reports and turn markdown to pdf
 
@@ -41,3 +41,5 @@ learnt how to write reports and turn markdown to pdf
   --listings
 ```
 
+## 3/01/26 -
+  trying to set up dev containers
