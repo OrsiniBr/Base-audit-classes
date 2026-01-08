@@ -55,3 +55,6 @@ learnt how to write reports and turn markdown to pdf
 
 ## 7/01/26 -
   overflow bug in puppy raffle due to type casting, precision loss, examinin the `withdrawFees` through balance
+
+## 8/07/26 -  
+   read "Sushiswap Miso": how scuzm*? saved $300m, answering questions we set while first run-through, read slither analysis, added more audit, info/gas. 
