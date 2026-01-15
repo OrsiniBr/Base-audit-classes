@@ -62,4 +62,7 @@ learnt how to write reports and turn markdown to pdf
 ## 9/01/26 - 
    explored codehawks and edited my profile, saw contests there.
    writting report for the bugs on puppy raffle.
-   took advantage of reports from slither and Adryn   
+   took advantage of reports from slither and Adryn
+
+## 15/01/25
+  reported reentrancy      
